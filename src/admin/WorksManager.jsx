@@ -1,10 +1,15 @@
 import { useState, useRef } from 'react';
-import { CATEGORIES } from '../data.js';
+import { DEFAULT_ABOUT } from '../data.js';
 import s from './WorksManager.module.css';
 
-export default function WorksManager({ portfolio, setPortfolio, showToast }) {
+export default function WorksManager({ portfolio, setPortfolio, about, showToast }) {
+  // Live categories from about — same source as the public nav
+  const categories = (about.categories && about.categories.length > 0)
+    ? about.categories
+    : DEFAULT_ABOUT.categories;
+
   const fileRef = useRef();
-  const [form, setForm] = useState({ title: '', category: CATEGORIES[0], type: 'image', src: '', tags: '' });
+  const [form, setForm] = useState({ title: '', category: categories[0], type: 'image', src: '', tags: '' });
   const [preview, setPreview] = useState('');
   const [filterCat, setFilterCat] = useState('all');
 
@@ -12,16 +17,30 @@ export default function WorksManager({ portfolio, setPortfolio, showToast }) {
     const file = e.target.files[0]; if (!file) return;
     const isVideo = file.type.startsWith('video/');
     const reader = new FileReader();
-    reader.onload = (ev) => { setPreview(ev.target.result); setForm(f => ({ ...f, src: ev.target.result, type: isVideo ? 'video' : 'image' })); };
+    reader.onload = (ev) => {
+      setPreview(ev.target.result);
+      setForm(f => ({ ...f, src: ev.target.result, type: isVideo ? 'video' : 'image' }));
+    };
     reader.readAsDataURL(file);
   };
 
-  const clear = () => { setForm({ title:'', category: CATEGORIES[0], type:'image', src:'', tags:'' }); setPreview(''); if(fileRef.current) fileRef.current.value=''; };
+  const clear = () => {
+    setForm({ title: '', category: categories[0], type: 'image', src: '', tags: '' });
+    setPreview('');
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   const add = () => {
     if (!form.title.trim()) { showToast('Add a title', 'err'); return; }
     if (!form.src.trim())   { showToast('Add an image or URL', 'err'); return; }
-    const item = { id: Date.now().toString(), category: form.category, type: form.type, src: form.src.trim(), title: form.title.trim(), tags: form.tags.split(',').map(t=>t.trim()).filter(Boolean) };
+    const item = {
+      id: Date.now().toString(),
+      category: form.category,
+      type: form.type,
+      src: form.src.trim(),
+      title: form.title.trim(),
+      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean)
+    };
     setPortfolio([item, ...portfolio]);
     showToast(`"${item.title}" added`);
     clear();
@@ -36,13 +55,16 @@ export default function WorksManager({ portfolio, setPortfolio, showToast }) {
   const move = (id, dir) => {
     const idx = portfolio.findIndex(i => i.id === id);
     if (idx === -1) return;
-    const next = [...portfolio]; const swap = idx + dir;
+    const next = [...portfolio];
+    const swap = idx + dir;
     if (swap < 0 || swap >= next.length) return;
     [next[idx], next[swap]] = [next[swap], next[idx]];
     setPortfolio(next);
   };
 
-  const displayed = filterCat === 'all' ? portfolio : portfolio.filter(i => i.category === filterCat);
+  const displayed = filterCat === 'all'
+    ? portfolio
+    : portfolio.filter(i => i.category === filterCat);
 
   return (
     <div>
@@ -58,25 +80,33 @@ export default function WorksManager({ portfolio, setPortfolio, showToast }) {
           <input type="file" accept="image/*,video/*" ref={fileRef} onChange={handleFile} className={s.fileInput} />
           {preview
             ? <div className={s.previewBox}>
-                {form.type==='video' ? <video src={preview} className={s.previewImg} muted /> : <img src={preview} alt="" className={s.previewImg} />}
-                <button className={s.clearBtn} onClick={e=>{e.stopPropagation();clear();}}>clear</button>
+                {form.type === 'video'
+                  ? <video src={preview} className={s.previewImg} muted />
+                  : <img src={preview} alt="" className={s.previewImg} />
+                }
+                <button className={s.clearBtn} onClick={e => { e.stopPropagation(); clear(); }}>clear</button>
               </div>
             : <><span className={s.uploaderIcon}>+</span><span className={s.uploaderText}>upload image or video</span></>
           }
         </div>
         <div className={s.orRow}><span>or paste url</span></div>
-        <input className={s.input} value={form.src.startsWith('data:') ? '' : form.src}
-          placeholder="https://" onChange={e => { setForm(f=>({...f,src:e.target.value})); setPreview(e.target.value); }} />
+        <input
+          className={s.input}
+          value={form.src.startsWith('data:') ? '' : form.src}
+          placeholder="https://"
+          onChange={e => { setForm(f => ({ ...f, src: e.target.value })); setPreview(e.target.value); }}
+        />
         <div className={s.row2}>
           <div className={s.fg}>
             <label className={s.label}>title</label>
             <input className={s.input} value={form.title} placeholder="e.g. Soft Ceremony"
-              onChange={e => setForm(f=>({...f,title:e.target.value}))} />
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
           </div>
           <div className={s.fg}>
             <label className={s.label}>category</label>
-            <select className={s.input} value={form.category} onChange={e => setForm(f=>({...f,category:e.target.value}))}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            <select className={s.input} value={form.category}
+              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+              {categories.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
         </div>
@@ -91,9 +121,16 @@ export default function WorksManager({ portfolio, setPortfolio, showToast }) {
         <div className={s.listHdr}>
           <p className={s.cardTitle}>All works</p>
           <div className={s.filters}>
-            <button className={`${s.chip} ${filterCat==='all' ? s.chipOn : ''}`} onClick={() => setFilterCat('all')}>all</button>
-            {CATEGORIES.map(c => (
-              <button key={c} className={`${s.chip} ${filterCat===c ? s.chipOn : ''}`} onClick={() => setFilterCat(c)}>{c.toLowerCase()}</button>
+            <button
+              className={`${s.chip} ${filterCat === 'all' ? s.chipOn : ''}`}
+              onClick={() => setFilterCat('all')}
+            >all</button>
+            {categories.map(c => (
+              <button
+                key={c}
+                className={`${s.chip} ${filterCat === c ? s.chipOn : ''}`}
+                onClick={() => setFilterCat(c)}
+              >{c.toLowerCase()}</button>
             ))}
           </div>
         </div>
@@ -103,16 +140,19 @@ export default function WorksManager({ portfolio, setPortfolio, showToast }) {
             return (
               <div key={item.id} className={s.wCard}>
                 <div className={s.wThumb}>
-                  <img src={item.src.startsWith('data:video') ? '' : item.src} alt={item.title}
-                    onError={e => { e.target.style.background='#e0e0e0'; }} />
+                  <img
+                    src={item.src.startsWith('data:video') ? '' : item.src}
+                    alt={item.title}
+                    onError={e => { e.target.style.background = '#e0e0e0'; }}
+                  />
                 </div>
                 <div className={s.wInfo}>
                   <p className={s.wTitle}>{item.title}</p>
                   <p className={s.wCat}>{item.category}</p>
                 </div>
                 <div className={s.wAct}>
-                  <button className={s.moveBtn} onClick={() => move(item.id,-1)} disabled={gi===0}>↑</button>
-                  <button className={s.moveBtn} onClick={() => move(item.id,1)} disabled={gi===portfolio.length-1}>↓</button>
+                  <button className={s.moveBtn} onClick={() => move(item.id, -1)} disabled={gi === 0}>↑</button>
+                  <button className={s.moveBtn} onClick={() => move(item.id, 1)} disabled={gi === portfolio.length - 1}>↓</button>
                   <button className={s.removeBtn} onClick={() => remove(item.id, item.title)}>remove</button>
                 </div>
               </div>

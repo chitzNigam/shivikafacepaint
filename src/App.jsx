@@ -1,14 +1,27 @@
 import { useState, useEffect } from 'react';
-import { CATEGORIES, DEFAULT_PORTFOLIO, DEFAULT_ABOUT } from './data.js';
+import { DEFAULT_PORTFOLIO, DEFAULT_ABOUT } from './data.js';
 import { useStorage } from './useStorage.js';
 import './App.css';
 
 export default function App() {
   const [portfolio] = useStorage('portfolio_items', DEFAULT_PORTFOLIO);
   const [about]     = useStorage('about_data', DEFAULT_ABOUT);
-  const [active, setActive]   = useState(CATEGORIES[0]);
+
+  // Derive live categories from about — fallback to DEFAULT_ABOUT.categories
+  const categories = (about.categories && about.categories.length > 0)
+    ? about.categories
+    : DEFAULT_ABOUT.categories;
+
+  const [active, setActive]   = useState(categories[0]);
   const [lightbox, setLightbox] = useState(null);
   const [entering, setEntering] = useState(false);
+
+  // If categories change and active is no longer valid, reset to first
+  useEffect(() => {
+    if (!categories.includes(active)) {
+      setActive(categories[0]);
+    }
+  }, [categories]);
 
   const items = portfolio.filter(i => i.category === active);
 
@@ -18,7 +31,6 @@ export default function App() {
     setTimeout(() => { setActive(cat); setEntering(false); }, 180);
   };
 
-  // Close lightbox on Escape
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape') setLightbox(null); };
     window.addEventListener('keydown', fn);
@@ -30,11 +42,11 @@ export default function App() {
 
       {/* ── NAV ─────────────────────────────────────── */}
       <header className="nav">
-        <a className="nav-logo" href="/" onClick={e => { e.preventDefault(); switchCat(CATEGORIES[0]); }}>
+        <a className="nav-logo" href="/" onClick={e => { e.preventDefault(); switchCat(categories[0]); }}>
           paint
         </a>
         <nav className="nav-cats">
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <button
               key={cat}
               className={`nav-cat${active === cat ? ' nav-cat--on' : ''}`}
@@ -61,7 +73,10 @@ export default function App() {
               onClick={() => setLightbox(item)}
             >
               <div className="cell-inner">
-                <img src={item.src} alt={item.title} loading="lazy" />
+                {item.type === 'video'
+                  ? <video src={item.src} muted loop playsInline />
+                  : <img src={item.src} alt={item.title} loading="lazy" />
+                }
               </div>
               <figcaption className="cell-caption">{item.title}</figcaption>
             </figure>

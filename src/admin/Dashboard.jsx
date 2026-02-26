@@ -19,10 +19,12 @@ export default function Dashboard({ portfolio, about, setPortfolio, setAbout, on
           <p className={s.siteName}>paint</p>
           <p className={s.sideRole}>admin</p>
           <nav className={s.nav}>
-            {[['works','Works'],['profile','Profile & Contact']].map(([id,label]) => (
-              <button key={id} className={`${s.navBtn} ${tab===id ? s.navOn : ''}`} onClick={() => setTab(id)}>
-                {label}
-              </button>
+            {[['works', 'Works'], ['profile', 'Profile & Contact']].map(([id, label]) => (
+              <button
+                key={id}
+                className={`${s.navBtn} ${tab === id ? s.navOn : ''}`}
+                onClick={() => setTab(id)}
+              >{label}</button>
             ))}
           </nav>
         </div>
@@ -31,11 +33,30 @@ export default function Dashboard({ portfolio, about, setPortfolio, setAbout, on
           <button className={s.logoutBtn} onClick={onLogout}>sign out</button>
         </div>
       </aside>
+
       <main className={s.main}>
-        {tab === 'works'   && <WorksManager portfolio={portfolio} setPortfolio={setPortfolio} showToast={showToast} />}
-        {tab === 'profile' && <ProfileEditor about={about} setAbout={setAbout} showToast={showToast} />}
+        {tab === 'works' && (
+          <WorksManager
+            portfolio={portfolio}
+            setPortfolio={setPortfolio}
+            about={about}
+            showToast={showToast}
+          />
+        )}
+        {tab === 'profile' && (
+          <ProfileEditor
+            about={about}
+            setAbout={setAbout}
+            showToast={showToast}
+          />
+        )}
       </main>
-      {toast && <div className={`${s.toast} ${toast.type==='err' ? s.toastErr : ''}`}>{toast.msg}</div>}
+
+      {toast && (
+        <div className={`${s.toast} ${toast.type === 'err' ? s.toastErr : ''}`}>
+          {toast.msg}
+        </div>
+      )}
     </div>
   );
 }

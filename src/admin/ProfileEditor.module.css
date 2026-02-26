@@ -17,3 +17,15 @@
 .addBtn:hover { opacity: 0.7; }
 .saveBtn { padding: 12px 32px; background: var(--ink); color: white; border: none; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: lowercase; cursor: pointer; transition: opacity 0.15s; }
 .saveBtn:hover { opacity: 0.75; }
+
+.hint {
+  font-size: 0.72rem;
+  color: var(--mid);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.empty {
+  font-size: 0.75rem;
+  color: var(--pale);
+  padding: 8px 0;
+}

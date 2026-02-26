@@ -1,3 +1,5 @@
+// Categories are now stored inside about so they can be edited via the admin.
+// CATEGORIES is kept only as a fallback default.
 export const CATEGORIES = [
   "Bridal",
   "Editorial",
@@ -32,12 +34,21 @@ export const DEFAULT_ABOUT = {
   title: "Makeup & Hair Artist",
   location: "London & Essex · Available Internationally",
   bio: "Ten years of artistry across film, fashion, bridal and editorial.",
-  skills: ["Bridal & Occasion","Film & Television","Editorial & Fashion","Male Grooming","E-commerce","Red Carpet"],
+  // categories drives BOTH the nav on the public site AND the dropdown in WorksManager
+  categories: [
+    "Bridal",
+    "Editorial",
+    "Fashion",
+    "Film & TV",
+    "Glam",
+    "Ecomm",
+    "Male Grooming",
+  ],
   credits: ["Vogue UK","Channel 4","London Fashion Week","BBC Studios","ELLE Magazine"],
   contact: { email: "hello@yourname.co.uk", instagram: "@yourname_mua", phone: "+44 7700 000000" }
 };
 
-export const ADMIN_PASSWORD = "your-pass-here";
+export const ADMIN_PASSWORD = "changeme123";
 
 export function isAdminLoggedIn() {
   return sessionStorage.getItem('paint_admin') === 'true';
