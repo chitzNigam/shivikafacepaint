@@ -1,0 +1,34 @@
+.page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--ink);
+}
+.form {
+  width: 320px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.logo {
+  font-family: 'EB Garamond', Georgia, serif; font-size: 2rem;
+  font-style: italic; color: white; letter-spacing: -0.01em;
+}
+.sub {
+  font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.25); margin-bottom: 8px;
+}
+.field { width: 100%; }
+.input {
+  width: 100%; padding: 12px 0; background: none;
+  border: none; border-bottom: 1px solid rgba(255,255,255,0.15);
+  color: white; font-size: 0.9rem; outline: none; text-align: center;
+  letter-spacing: 0.08em; transition: border-color 0.2s;
+}
+.input::placeholder { color: rgba(255,255,255,0.2); }
+.input:focus { border-bottom-color: rgba(255,255,255,0.5); }
+.err { border-bottom-color: #c0392b !important; }
+.errMsg { font-size: 0.7rem; color: #e74c3c; letter-spacing: 0.06em; }
+.btn {
+  width: 100%; padding: 12px; background: none;
+  border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
+  font-size: 0.7rem; letter-spacing: 0.2em; text-transform: lowercase;
+  transition: all 0.2s; margin-top: 8px;
+}
+.btn:hover:not(:disabled) { border-color: white; color: white; }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
