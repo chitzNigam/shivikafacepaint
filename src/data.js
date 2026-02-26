@@ -37,7 +37,7 @@ export const DEFAULT_ABOUT = {
   contact: { email: "hello@yourname.co.uk", instagram: "@yourname_mua", phone: "+44 7700 000000" }
 };
 
-export const ADMIN_PASSWORD = "ImVeryStrongPass@007";
+export const ADMIN_PASSWORD = "your-pass-here";
 
 export function isAdminLoggedIn() {
   return sessionStorage.getItem('paint_admin') === 'true';
