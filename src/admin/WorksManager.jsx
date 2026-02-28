@@ -1,17 +1,15 @@
 import { useState, useRef } from 'react';
-import { DEFAULT_ABOUT } from '../data.js';
+import { apiAddPortfolioItem, apiRemovePortfolioItem, apiReorderPortfolio } from '../useStorage.js';
 import s from './WorksManager.module.css';
 
 export default function WorksManager({ portfolio, setPortfolio, about, showToast }) {
-  // Live categories from about — same source as the public nav
-  const categories = (about.categories && about.categories.length > 0)
-    ? about.categories
-    : DEFAULT_ABOUT.categories;
+  const categories = about?.categories?.length > 0 ? about.categories : [];
 
   const fileRef = useRef();
-  const [form, setForm] = useState({ title: '', category: categories[0], type: 'image', src: '', tags: '' });
+  const [form, setForm]     = useState({ title: '', category: categories[0] || '', type: 'image', src: '', tags: '' });
   const [preview, setPreview] = useState('');
   const [filterCat, setFilterCat] = useState('all');
+  const [saving, setSaving] = useState(false);
 
   const handleFile = (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -25,34 +23,49 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
   };
 
   const clear = () => {
-    setForm({ title: '', category: categories[0], type: 'image', src: '', tags: '' });
+    setForm({ title: '', category: categories[0] || '', type: 'image', src: '', tags: '' });
     setPreview('');
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const add = () => {
+  const add = async () => {
     if (!form.title.trim()) { showToast('Add a title', 'err'); return; }
     if (!form.src.trim())   { showToast('Add an image or URL', 'err'); return; }
-    const item = {
-      id: Date.now().toString(),
-      category: form.category,
-      type: form.type,
-      src: form.src.trim(),
-      title: form.title.trim(),
-      tags: form.tags.split(',').map(t => t.trim()).filter(Boolean)
-    };
-    setPortfolio([item, ...portfolio]);
-    showToast(`"${item.title}" added`);
-    clear();
+    if (!form.category)     { showToast('Add a category in Profile first', 'err'); return; }
+    setSaving(true);
+    try {
+      const item = {
+        id:       Date.now().toString(),
+        category: form.category,
+        type:     form.type,
+        src:      form.src.trim(),
+        title:    form.title.trim(),
+        tags:     form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      };
+      const updated = await apiAddPortfolioItem(item);
+      setPortfolio(updated);
+      showToast(`"${item.title}" added`);
+      clear();
+    } catch (err) {
+      showToast('Failed to save — check console', 'err');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const remove = (id, title) => {
+  const remove = async (id, title) => {
     if (!confirm(`Remove "${title}"?`)) return;
-    setPortfolio(portfolio.filter(i => i.id !== id));
-    showToast(`"${title}" removed`);
+    try {
+      const updated = await apiRemovePortfolioItem(id);
+      setPortfolio(updated);
+      showToast(`"${title}" removed`);
+    } catch (err) {
+      showToast('Failed to remove', 'err');
+    }
   };
 
-  const move = (id, dir) => {
+  const move = async (id, dir) => {
     const idx = portfolio.findIndex(i => i.id === id);
     if (idx === -1) return;
     const next = [...portfolio];
@@ -60,11 +73,15 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
     if (swap < 0 || swap >= next.length) return;
     [next[idx], next[swap]] = [next[swap], next[idx]];
     setPortfolio(next);
+    try {
+      const updated = await apiReorderPortfolio(next);
+      setPortfolio(updated);
+    } catch (err) {
+      showToast('Failed to reorder', 'err');
+    }
   };
 
-  const displayed = filterCat === 'all'
-    ? portfolio
-    : portfolio.filter(i => i.category === filterCat);
+  const displayed = filterCat === 'all' ? portfolio : portfolio.filter(i => i.category === filterCat);
 
   return (
     <div>
@@ -72,6 +89,12 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
         <h1 className={s.title}>Works</h1>
         <p className={s.sub}>{portfolio.length} items</p>
       </div>
+
+      {categories.length === 0 && (
+        <div className={s.card}>
+          <p className={s.hint}>⚠ No categories yet. Go to <strong>Profile & Contact</strong> to add categories first.</p>
+        </div>
+      )}
 
       {/* ADD */}
       <div className={s.card}>
@@ -106,12 +129,17 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
             <label className={s.label}>category</label>
             <select className={s.input} value={form.category}
               onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {categories.map(c => <option key={c}>{c}</option>)}
+              {categories.length === 0
+                ? <option value="">— add categories in Profile —</option>
+                : categories.map(c => <option key={c}>{c}</option>)
+              }
             </select>
           </div>
         </div>
         <div className={s.actions}>
-          <button className={s.addBtn} onClick={add}>Add to site</button>
+          <button className={s.addBtn} onClick={add} disabled={saving || categories.length === 0}>
+            {saving ? 'Saving…' : 'Add to site'}
+          </button>
           <button className={s.ghostBtn} onClick={clear}>clear</button>
         </div>
       </div>
@@ -121,16 +149,9 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
         <div className={s.listHdr}>
           <p className={s.cardTitle}>All works</p>
           <div className={s.filters}>
-            <button
-              className={`${s.chip} ${filterCat === 'all' ? s.chipOn : ''}`}
-              onClick={() => setFilterCat('all')}
-            >all</button>
+            <button className={`${s.chip} ${filterCat === 'all' ? s.chipOn : ''}`} onClick={() => setFilterCat('all')}>all</button>
             {categories.map(c => (
-              <button
-                key={c}
-                className={`${s.chip} ${filterCat === c ? s.chipOn : ''}`}
-                onClick={() => setFilterCat(c)}
-              >{c.toLowerCase()}</button>
+              <button key={c} className={`${s.chip} ${filterCat === c ? s.chipOn : ''}`} onClick={() => setFilterCat(c)}>{c.toLowerCase()}</button>
             ))}
           </div>
         </div>
@@ -140,11 +161,8 @@ export default function WorksManager({ portfolio, setPortfolio, about, showToast
             return (
               <div key={item.id} className={s.wCard}>
                 <div className={s.wThumb}>
-                  <img
-                    src={item.src.startsWith('data:video') ? '' : item.src}
-                    alt={item.title}
-                    onError={e => { e.target.style.background = '#e0e0e0'; }}
-                  />
+                  <img src={item.src.startsWith('data:video') ? '' : item.src} alt={item.title}
+                    onError={e => { e.target.style.background = '#e0e0e0'; }} />
                 </div>
                 <div className={s.wInfo}>
                   <p className={s.wTitle}>{item.title}</p>

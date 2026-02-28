@@ -3,8 +3,8 @@ import WorksManager from './WorksManager.jsx';
 import ProfileEditor from './ProfileEditor.jsx';
 import s from './Dashboard.module.css';
 
-export default function Dashboard({ portfolio, about, setPortfolio, setAbout, onLogout }) {
-  const [tab, setTab] = useState('works');
+export default function Dashboard({ portfolio, about, setPortfolio, setAbout, onLogout, loading }) {
+  const [tab, setTab]     = useState('works');
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = 'ok') => {
@@ -35,20 +35,28 @@ export default function Dashboard({ portfolio, about, setPortfolio, setAbout, on
       </aside>
 
       <main className={s.main}>
-        {tab === 'works' && (
-          <WorksManager
-            portfolio={portfolio}
-            setPortfolio={setPortfolio}
-            about={about}
-            showToast={showToast}
-          />
-        )}
-        {tab === 'profile' && (
-          <ProfileEditor
-            about={about}
-            setAbout={setAbout}
-            showToast={showToast}
-          />
+        {loading ? (
+          <div className={s.loadingWrap}>
+            <p className={s.loadingText}>Loading from database…</p>
+          </div>
+        ) : (
+          <>
+            {tab === 'works' && (
+              <WorksManager
+                portfolio={portfolio}
+                setPortfolio={setPortfolio}
+                about={about}
+                showToast={showToast}
+              />
+            )}
+            {tab === 'profile' && (
+              <ProfileEditor
+                about={about}
+                setAbout={setAbout}
+                showToast={showToast}
+              />
+            )}
+          </>
         )}
       </main>
 

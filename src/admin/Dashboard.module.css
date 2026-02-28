@@ -38,3 +38,15 @@
   .side { position: relative; height: auto; }
   .main { padding: 32px 24px; }
 }
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+}
+.loadingText {
+  font-size: 0.85rem;
+  color: #999;
+  letter-spacing: 0.05em;
+}

@@ -1,35 +1,23 @@
 import { useState, useEffect } from 'react';
-import { DEFAULT_PORTFOLIO, DEFAULT_ABOUT } from './data.js';
 import { useStorage } from './useStorage.js';
 import './App.css';
 
 export default function App() {
-  const [portfolio] = useStorage('portfolio_items', DEFAULT_PORTFOLIO);
-  const [about]     = useStorage('about_data', DEFAULT_ABOUT);
+  const [portfolio, , portfolioLoading] = useStorage('portfolio_items');
+  const [about,     , aboutLoading]     = useStorage('about_data');
 
-  // Derive live categories from about — fallback to DEFAULT_ABOUT.categories
-  const categories = (about.categories && about.categories.length > 0)
-    ? about.categories
-    : DEFAULT_ABOUT.categories;
+  const loading = portfolioLoading || aboutLoading;
 
-  const [active, setActive]   = useState(categories[0]);
+  const categories = about?.categories?.length > 0 ? about.categories : [];
+  const [active, setActive]     = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [entering, setEntering] = useState(false);
 
-  // If categories change and active is no longer valid, reset to first
+  // Set active category once categories load
   useEffect(() => {
-    if (!categories.includes(active)) {
-      setActive(categories[0]);
-    }
-  }, [categories]);
-
-  const items = portfolio.filter(i => i.category === active);
-
-  const switchCat = (cat) => {
-    if (cat === active) return;
-    setEntering(true);
-    setTimeout(() => { setActive(cat); setEntering(false); }, 180);
-  };
+    if (categories.length > 0 && !active) setActive(categories[0]);
+    if (active && !categories.includes(active)) setActive(categories[0] ?? null);
+  }, [categories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape') setLightbox(null); };
@@ -37,13 +25,30 @@ export default function App() {
     return () => window.removeEventListener('keydown', fn);
   }, []);
 
+  const switchCat = (cat) => {
+    if (cat === active) return;
+    setEntering(true);
+    setTimeout(() => { setActive(cat); setEntering(false); }, 180);
+  };
+
+  const items = (portfolio || []).filter(i => i.category === active);
+
+  // Show nothing until DB data is ready
+  if (loading) return (
+    <div className="site">
+      <div className="loading-screen">
+        <span className="loading-dot" />
+      </div>
+    </div>
+  );
+
   return (
     <div className="site">
 
       {/* ── NAV ─────────────────────────────────────── */}
       <header className="nav">
-        <a className="nav-logo" href="/" onClick={e => { e.preventDefault(); switchCat(categories[0]); }}>
-          paint
+        <a className="nav-logo" href="/" onClick={e => { e.preventDefault(); if (categories[0]) switchCat(categories[0]); }}>
+          {about?.name ? about.name.split(' ')[0].toLowerCase() : 'paint'}
         </a>
         <nav className="nav-cats">
           {categories.map(cat => (
@@ -56,14 +61,14 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <a className="nav-contact" href={`mailto:${about.contact.email}`}>
-          contact
-        </a>
+        {about?.contact?.email && (
+          <a className="nav-contact" href={`mailto:${about.contact.email}`}>contact</a>
+        )}
       </header>
 
       {/* ── GRID ─────────────────────────────────────── */}
       <main className={`grid-wrap${entering ? ' grid-wrap--out' : ''}`}>
-        <div className="cat-label">{active.toLowerCase()}</div>
+        {active && <div className="cat-label">{active.toLowerCase()}</div>}
         <div className="grid" data-count={items.length}>
           {items.map((item, i) => (
             <figure
@@ -81,7 +86,7 @@ export default function App() {
               <figcaption className="cell-caption">{item.title}</figcaption>
             </figure>
           ))}
-          {items.length === 0 && (
+          {items.length === 0 && active && (
             <p className="empty">No works in this category yet.</p>
           )}
         </div>
@@ -89,8 +94,14 @@ export default function App() {
 
       {/* ── FOOTER ───────────────────────────────────── */}
       <footer className="footer">
-        <span className="footer-name">{about.name} — {about.title}</span>
-        <span className="footer-contact">{about.contact.instagram} &nbsp;·&nbsp; {about.contact.phone}</span>
+        {about?.name && <span className="footer-name">{about.name}{about.title ? ` — ${about.title}` : ''}</span>}
+        {about?.contact && (
+          <span className="footer-contact">
+            {about.contact.instagram && <>{about.contact.instagram}</>}
+            {about.contact.instagram && about.contact.phone && <> &nbsp;·&nbsp; </>}
+            {about.contact.phone && <>{about.contact.phone}</>}
+          </span>
+        )}
       </footer>
 
       {/* ── LIGHTBOX ─────────────────────────────────── */}
